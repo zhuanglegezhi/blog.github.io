@@ -4,8 +4,6 @@
 
 bean1依赖bean2，bean2依赖bean1，Spring如何解决循环依赖的问题？
 
-
-
 ### 实验过程
 
 **1.构造器方式注入**
@@ -181,7 +179,7 @@ protected Object doCreateBean(...){
     ...
         
 		populateBean(beanName, mbd, instanceWrapper);
-    
+   
     ...       
 }
 ```
@@ -190,34 +188,29 @@ protected Object doCreateBean(...){
 
 ## 总结
 
-**Spring的解决方式**
+### 循环依赖的解决方式
 
 通过利用三级缓存机制，提前曝光半成品bean，解决循环依赖问题；
 
 Spring循环依赖的**理论依据**其实是Java基于引用传递，当我们获取到对象的引用时，对象的field或者或属性是可以延后设置的。
 
- Spring单例对象的初始化其实可以分为三步：
+### 问题解决
 
-- createBeanInstance：实例化，实际上就是调用对应的构造方法构造对象，此时只是调用了构造方法，spring xml中指定的property并没有进行populate
-- populateBean：填充属性，这步对spring xml中指定的property进行populate
+#### 具体分析
 
+bean1依赖bean2，bean2依赖bean1，Spring如何解决循环依赖的问题？
 
+1. bean1首先完成了初始化的第一步，并且将自己提前曝光到singletonFactories中;
+2. bean1发现自己依赖对象bean2，此时就尝试去get(bean2)，发现bean2还没有被create，所以走create流程;
+3. bean2在初始化的时候发现自己依赖了对象bean1，于是尝试get(bean1)，尝试一级缓存singletonObjects(肯定没有，因为bean1还没初始化完全)，尝试二级缓存earlySingletonObjects（也没有），尝试三级缓存singletonFactories，由于bean1通过ObjectFactory将自己提前曝光了，所以bean2能够通过ObjectFactory.getObject拿到bean1对象(虽然A还没有初始化完全，但是总比没有好呀)，bean2拿到bean1对象后顺利完成了初始化，并将自己放入到一级缓存singletonObjects中;
+4. bean1完成了bean2的依赖注入，完成自己的初始化阶段，放入了singletonObjects中；
+5. 由于bean2在创建时持有bean1的对象引用，所以bean2中的bean1对象也最终完成了依赖注入。
 
-**具体分析**
-
-这样做有什么好处呢？让我们来分析一下“A的某个field或者setter依赖了B的实例对象，同时B的某个field或者setter依赖了A的实例对象”这种循环依赖的情况。A首先完成了初始化的第一步，并且将自己提前曝光到singletonFactories中，此时进行初始化的第二步，发现自己依赖对象B，此时就尝试去get(B)，发现B还没有被create，所以走create流程，B在初始化第一步的时候发现自己依赖了对象A，于是尝试get(A)，尝试一级缓存singletonObjects(肯定没有，因为A还没初始化完全)，尝试二级缓存earlySingletonObjects（也没有），尝试三级缓存singletonFactories，由于A通过ObjectFactory将自己提前曝光了，所以B能够通过ObjectFactory.getObject拿到A对象(虽然A还没有初始化完全，但是总比没有好呀)，B拿到A对象后顺利完成了初始化阶段1、2、3，完全初始化之后将自己放入到一级缓存singletonObjects中。此时返回A中，A此时能拿到B的对象顺利完成自己的初始化阶段2、3，最终A也完成了初始化，长大成人，进去了一级缓存singletonObjects中，而且更加幸运的是，由于B拿到了A的对象引用，所以B现在hold住的A对象也蜕变完美了！！
-
-
-
-### 开篇的几个问题
-
-**不支持构造注入的循环依赖**
+#### 不支持构造注入的循环依赖
 
 三级缓存机制是在调用完bean的构造方法后执行的，所以对构造注入的循环依赖问题无法解决。
 
-
-
-**只能解决单例循环引用的原因**
+#### 只能解决单例循环引用的原因
 
 ```java
 protected <T> T doGetBean(..){
