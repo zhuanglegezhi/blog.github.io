@@ -48,7 +48,7 @@ bean1依赖bean2，bean2依赖bean1，Spring如何解决循环依赖的问题？
 
 只有2成功，1、3都抛出异常。
 
-![image-20190222163123727](/Users/zz/Library/Application Support/typora-user-images/image-20190222163123727.png)
+![image-20190222163123727](https://github.com/zhuanglegezhi/blog.github.io/blob/master/resource/%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96.png)
 
 
 
