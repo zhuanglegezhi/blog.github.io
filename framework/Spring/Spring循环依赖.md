@@ -1,6 +1,6 @@
 # Spring循环依赖
 
-## 问题引入
+### 问题引入
 
 bean1依赖bean2，bean2依赖bean1，Spring如何解决循环依赖的问题？
 
@@ -106,7 +106,7 @@ Spring首先从`singletonObjects`（一级缓存）中尝试获取，如果获�
 
 从中可以看到，关键点在于三级缓存，`singletonFactory.getObject()`方法，此时自然而然会提出两个问题：
 
-**1.该方法的作用？** 
+**1.ObjectFactory的作用？** 
 
 ```java
 public interface ObjectFactory<T> {
@@ -122,8 +122,6 @@ public interface ObjectFactory<T> {
 ```
 
 **2.对象是何时加入到三级缓存中的呢？** 
-
-添加第三级缓存的方法如下：
 
 ```java
 DefaultSingletonBeanRegistry.class
@@ -188,14 +186,6 @@ protected Object doCreateBean(...){
 
 ## 总结
 
-### 循环依赖的解决方式
-
-通过利用三级缓存机制，提前曝光半成品bean，解决循环依赖问题；
-
-Spring循环依赖的**理论依据**其实是Java基于引用传递，当我们获取到对象的引用时，对象的field或者或属性是可以延后设置的。
-
-
-
 ### 问题解决
 
 #### 具体分析
@@ -210,13 +200,13 @@ bean1依赖bean2，bean2依赖bean1，Spring如何解决循环依赖的问题？
 
 
 
-#### 不支持构造注入的循环依赖
+#### 为什么不支持构造注入的循环依赖？
 
 三级缓存机制是在调用完bean的构造方法后执行的，所以对构造注入的循环依赖问题无法解决。
 
 
 
-#### 只能解决单例循环引用的原因
+#### 为什么只能解决单例循环引用？
 
 ```java
 protected <T> T doGetBean(..){
@@ -236,3 +226,11 @@ protected <T> T doGetBean(..){
         ...
    }
 ```
+
+
+
+### 循环依赖的解决方式
+
+- 通过利用三级缓存机制，提前曝光半成品bean，解决循环依赖问题；
+
+- Spring循环依赖的**理论依据**其实是Java基于引用传递，当我们获取到对象的引用时，对象的field或者或属性是可以延后设置的。
